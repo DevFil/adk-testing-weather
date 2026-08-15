@@ -1,0 +1,8 @@
+.env
+.adk/
+__pycache__/
+*.pyc
+.venv/*
+docs/*
+README copy.md
+benchmark_ollama.sh
