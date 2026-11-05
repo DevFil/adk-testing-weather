@@ -3,12 +3,10 @@
 Semplice agente realizzato con **Google Agent Development Kit (ADK)** e
 **Qwen3.5-4B**, eseguito localmente tramite **Ollama**.
 
-L'agente dispone di due tool Python:
+L'agente dispone di un tool Python:
 
 - `get_weather`: recupera da Open-Meteo condizioni attuali e previsioni per le
-  prossime 12 ore;
-- `get_room_air_quality`: recupera da Kaiterra CO₂, PM2.5, PM10, TVOC,
-  temperatura e umidità della stanza.
+  prossime 12 ore.
 
 ## Requisiti
 
@@ -75,21 +73,7 @@ Contenuto principale:
 OPENAI_API_BASE=http://127.0.0.1:11435/v1
 OPENAI_API_KEY=ollama
 MODEL_ID=qwen3.5:4b
-KAITERRA_KIOSK_ID=inserire_il_proprio_kiosk_id
-ROOM_TIMEZONE=Europe/Rome
 ```
-
-`KAITERRA_KIOSK_ID` è la parte identificativa dell'endpoint Kaiterra:
-
-```text
-https://kiosk.kaiterra.com/v4/KAITERRA_KIOSK_ID/data
-```
-
-Se non si dispone
-di un sensore Kaiterra, il tool meteo continua a funzionare, mentre quello della
-stanza restituisce un errore di configurazione controllato.
-
-***All'interno della configurazione è stato temporaneamente mantenuto l'ID del mio sensore per permettere di testare le funzionalità dell'agente.***
 
 ## 4. Avviare Qwen
 
@@ -187,8 +171,6 @@ Esempi:
 ```text
 Che tempo fa a Verona?
 Pioverà nelle prossime 12 ore a Milano?
-Qual è la temperatura nella mia stanza?
-Mostrami le misurazioni di CO2 e PM2.5.
 ```
 
 ## 6. Avviare ADK Web

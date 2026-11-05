@@ -1,12 +1,7 @@
-import os
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
 import httpx
 
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
-KAITERRA_API_BASE = "https://kiosk.kaiterra.com/v4"
 WEATHER_CODES = {
     0: "sereno", 1: "prevalentemente sereno", 2: "parzialmente nuvoloso",
     3: "coperto", 45: "nebbia", 48: "nebbia con brina",
@@ -16,18 +11,6 @@ WEATHER_CODES = {
     80: "rovesci leggeri", 81: "rovesci moderati", 82: "rovesci violenti",
     95: "temporale", 96: "temporale con grandine", 99: "temporale con grandine intensa",
 }
-
-
-def _local_time(timestamp: object) -> str | None:
-    """Converte un timestamp ISO UTC nel fuso italiao."""
-    if not isinstance(timestamp, str):
-        return None
-    try:
-        tz = ZoneInfo(os.getenv("ROOM_TIMEZONE", "Europe/Rome"))
-        dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
-        return dt.astimezone(tz).isoformat(timespec="seconds")
-    except Exception:
-        return None
 
 
 def get_weather(city: str) -> dict:
@@ -119,51 +102,3 @@ def get_weather(city: str) -> dict:
     except (httpx.HTTPError, KeyError, TypeError, ValueError):
         return {"ok": False, "error": "servizio meteo temporaneamente non disponibile"}
 
-
-def get_room_air_quality() -> dict:
-    """Restituisce gli ultimi dati ambientali misurati nella stanza.
-
-    Usa questo tool per domande sulla temperatura interna, umidità, CO2,
-    PM2.5, PM10, TVOC e qualità dell'aria della stanza.
-    """
-    kiosk_id = os.getenv("KAITERRA_KIOSK_ID", "").strip()
-    if not kiosk_id:
-        return {"ok": False, "error": "sensore Kaiterra non configurato"}
-
-    try:
-        url = f"{KAITERRA_API_BASE}/{kiosk_id}/data"
-        resp = httpx.get(url, timeout=8.0)
-        resp.raise_for_status()
-        payload = resp.json()
-
-        devices = payload.get("devices") or []
-        if not devices:
-            return {"ok": False, "error": "nessun sensore disponibile"}
-
-        device = devices[0]
-        measurements = {}
-        for item in device.get("data", []):
-            param = item.get("param")
-            points = item.get("points") or []
-            if not param or not points:
-                continue
-            last_point = points[-1]
-            measurements[param] = {
-                "value": last_point.get("value"),
-                "units": item.get("units"),
-                "aqi": last_point.get("aqi"),
-                "timestamp_local": _local_time(last_point.get("ts")),
-            }
-
-        wanted = ("co2", "pm25", "pm10", "tvoc", "temperature", "humidity")
-        selected = {key: measurements[key] for key in wanted if key in measurements}
-        return {
-            "ok": True,
-            "room": device.get("name", "stanza"),
-            "sensor_status": device.get("status"),
-            "timezone": os.getenv("ROOM_TIMEZONE", "Europe/Rome"),
-            "measurements": selected,
-            "source": "Kaiterra",
-        }
-    except (httpx.HTTPError, KeyError, TypeError, ValueError):
-        return {"ok": False, "error": "sensore qualità dell'aria temporaneamente non disponibile"}
